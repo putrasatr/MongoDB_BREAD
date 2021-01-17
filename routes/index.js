@@ -54,7 +54,7 @@ router.get('/', function (req, res, next) {
       limit: limit,
       skip: offset
     }).then(function (data) {
-      // console.log(data);
+      console.log(data)
       res.render('index', {
         data,
         page,
@@ -103,8 +103,6 @@ router.get('/edit', function (req, res, next) {
   Demo.find({
     _id: id
   }, function (err, rows) {
-    //console.log("show edit");
-    console.log(id);
     res.render('edit', {
       item: rows[0]
     });
