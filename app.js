@@ -3,63 +3,38 @@ var path = require('path');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+const { MongoClient } = require('mongodb')
+const assert = require("assert")
+require("dotenv").config()
 
-mongoose.connect('mongodb://localhost/express');
 
-var ejs = require('ejs');
-
-var routes = require('./routes/index');
-var users = require('./routes/users');
-
-var app = express();
 
 // view engine setup
+const app = express();
+
 app.set('views', path.join(__dirname, 'views'));
-app.engine('html', ejs.__express);
-app.set('view engine', 'html');
+app.set('view engine', 'ejs');
+
+// var users = require('./routes/users');
 
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.json())
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
-app.use('/users', users);
+const baseUrl = process.env.DB_URL
+const dbName = process.env.DB_NAME
+const url = baseUrl + dbName
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+MongoClient.connect(baseUrl,{ useUnifiedTopology: true, useNewUrlParser: true }, function (err, client) {
+  // assert.equal(null, err);
+  if (err) throw err
+  console.log("Connected successfully to server");
+  const db = client.db(dbName);
+  const indexRouter = require('./routes/index')(db);
+  app.use('/', indexRouter);
+})
 
-// error handlers
-
-// development error handler
-// will print stacktrace
-if (app.get('env') === 'development') {
-  app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-      message: err.message,
-      error: err
-    });
-  });
-}
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function (err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
-  });
-});
-
-
-module.exports = app;
+module.exports = app
